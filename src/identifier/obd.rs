@@ -1,7 +1,7 @@
 use super::{ExtendedId, Id, StandardId};
 
-const OBD_BROADCAST_ADDR_STANDARD: Id = Id::Standard(standard_id(0x7DF));
-const OBD_BROADCAST_ADDR_EXTENDED: Id = Id::Extended(extended_id(0x18DB33F1));
+pub const OBD_BROADCAST_ADDR_STANDARD: Id = Id::Standard(standard_id(0x7DF));
+pub const OBD_BROADCAST_ADDR_EXTENDED: Id = Id::Extended(extended_id(0x18DB33F1));
 const OBD_REQ_ADDR_START_STANDARD: Id = Id::Standard(standard_id(0x7E0));
 const OBD_REQ_ADDR_END_STANDARD: Id = Id::Standard(standard_id(0x7E7));
 const OBD_RESP_ADDR_START_STANDARD: Id = Id::Standard(standard_id(0x7E8));
@@ -21,6 +21,12 @@ impl DiagnosticBroadcastAddress {
 
     pub const fn extended() -> Self {
         Self(OBD_BROADCAST_ADDR_EXTENDED)
+    }
+}
+
+impl DiagnosticBroadcastAddress {
+    pub fn id(&self) -> Id {
+        self.0
     }
 }
 

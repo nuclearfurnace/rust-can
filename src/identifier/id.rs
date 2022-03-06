@@ -21,7 +21,7 @@ impl StandardId {
 
     /// Creates a `StandardId`.
     ///
-    /// Returns `None` if `identifier` is greater than [`MAX`].
+    /// Returns `None` if `identifier` is greater than [`MAX`][Self::MAX].
     #[inline]
     pub const fn new(identifier: u16) -> Option<Self> {
         if identifier <= Self::MAX.as_raw() {
@@ -64,7 +64,7 @@ impl ExtendedId {
 
     /// Creates an `ExtendedId`.
     ///
-    /// Returns `None` if `identifier` is greater than [`MAX`].
+    /// Returns `None` if `identifier` is greater than [`MAX`][Self::MAX].
     #[inline]
     pub const fn new(identifier: u32) -> Option<Self> {
         if identifier <= Self::MAX.as_raw() {

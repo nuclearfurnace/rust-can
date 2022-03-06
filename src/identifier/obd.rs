@@ -1,3 +1,5 @@
+use std::fmt;
+
 use super::{ExtendedId, Id, StandardId};
 
 const OBD_BROADCAST_ADDR_STANDARD: Id = Id::Standard(standard_id(0x7DF));
@@ -27,6 +29,12 @@ impl DiagnosticBroadcastAddress {
 impl DiagnosticBroadcastAddress {
     pub fn id(&self) -> Id {
         self.0
+    }
+}
+
+impl fmt::Display for DiagnosticBroadcastAddress {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
 
@@ -70,6 +78,12 @@ impl DiagnosticRequestAddress {
     }
 }
 
+impl fmt::Display for DiagnosticRequestAddress {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 pub struct DiagnosticResponseAddress(Id);
 
 impl DiagnosticResponseAddress {
@@ -101,6 +115,12 @@ impl DiagnosticResponseAddress {
                 DiagnosticRequestAddress(Id::Extended(response_id))
             }
         }
+    }
+}
+
+impl fmt::Display for DiagnosticResponseAddress {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
 

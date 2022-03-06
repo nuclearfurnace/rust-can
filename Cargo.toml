@@ -1,0 +1,12 @@
+[package]
+name = "can"
+version = "0.1.0"
+edition = "2021"
+authors = ["Toby Lawrence <toby@nuclearfurnace.com>"]
+
+description = "A general purpose library for common CAN types."
+license = "MIT"
+repository = "https://github.com/nuclearfurnace/rust-can"
+
+[dependencies]
+embedded-can = "0.3.0"

@@ -1,22 +1,22 @@
 //! CAN Identifiers.
 
-use std::fmt;
+use std::{cmp, fmt};
 
 /// Standard (11-bit) CAN identifier.
-/// 
+///
 /// Commonly referred to as CAN 2.0A, a standard identifier falls within the range of 0 to 0x7FF, inclusive.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct StandardId(u16);
 
 impl StandardId {
     /// Minimum value for a standard identifier.
-	/// 
-	/// This is the highest priority identifier.
+    ///
+    /// This is the highest priority identifier.
     pub const ZERO: Self = Self(0);
 
     /// Maximum value for a standard identifier.
-	/// 
-	/// This is the lowest priority identifier.
+    ///
+    /// This is the lowest priority identifier.
     pub const MAX: Self = Self(0x7FF);
 
     /// Creates a `StandardId`.
@@ -29,12 +29,6 @@ impl StandardId {
         } else {
             None
         }
-    }
-
-    /// Creates a `StandardId` without checking if it is inside the valid range.
-    #[inline]
-    pub const unsafe fn new_unchecked(identifier: u16) -> Self {
-        Self(identifier)
     }
 
     /// Returns the identifier as a raw integer.
@@ -51,21 +45,21 @@ impl fmt::Display for StandardId {
 }
 
 /// Extended (29-bit) CAN identifier.
-/// 
+///
 /// Commonly referred to as CAN 2.0B, an extended identifier falls within the range of 0 to
 /// 0x1FFFFFFF, inclusive.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct ExtendedId(u32);
 
 impl ExtendedId {
     /// Minimum value for an extended identifier.
-	/// 
-	/// This is the highest priority identifier.
+    ///
+    /// This is the highest priority identifier.
     pub const ZERO: Self = Self(0);
 
-    /// Maximum value for an extended identifier.
-	/// 
-	/// This is the lowest priority identifier.
+    /// Maximum value for ban extended identifier.
+    ///
+    /// This is the lowest priority identifier.
     pub const MAX: Self = Self(0x1FFF_FFFF);
 
     /// Creates an `ExtendedId`.
@@ -78,12 +72,6 @@ impl ExtendedId {
         } else {
             None
         }
-    }
-
-    /// Creates an `ExtendedId` without checking if it is inside the valid range.
-    #[inline]
-    pub const unsafe fn new_unchecked(identifier: u32) -> Self {
-        Self(identifier)
     }
 
     /// Returns the identifier as a raw integer.
@@ -105,12 +93,12 @@ impl fmt::Display for ExtendedId {
 }
 
 /// A CAN identifier (standard or extended).
-/// 
+///
 /// The identifier serves both as a logical key, or address, for a CAN message, where a message with
 /// a given identifier might be destined to be received by a specific node on the bus, or may
 /// represent a broadcast address that interested nodes can watch for.
-/// 
-/// Additionally, the identifier is used in the arbitration process, where multiple bus nodes are
+///
+/// Additionally, the identifier is used in the arbitration process, when multiple bus nodes are
 /// attempting to transmit simultaneously and one must be chosen to decide who is allowed to send,
 /// and who must wait to retry their message.  Identifiers that are lower in value have higher
 /// priority on the bus, and vise versa.
@@ -128,6 +116,17 @@ impl Id {
         match self {
             Self::Standard(sid) => sid.as_raw() as u32,
             Self::Extended(eid) => eid.as_raw(),
+        }
+    }
+}
+
+impl PartialOrd for Id {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        match (self, other) {
+            (Id::Standard(s1), Id::Standard(s2)) => s1.partial_cmp(s2),
+            (Id::Standard(_), Id::Extended(_)) => Some(cmp::Ordering::Less),
+            (Id::Extended(_), Id::Standard(_)) => Some(cmp::Ordering::Greater),
+            (Id::Extended(e1), Id::Extended(e2)) => e1.partial_cmp(e2),
         }
     }
 }

@@ -14,6 +14,7 @@ const OBD_RESP_ADDR_START_EXTENDED: Id = Id::Extended(extended_id(0x18DAF100));
 const OBD_RESP_ADDR_END_EXTENDED: Id = Id::Extended(extended_id(0x18DAF1FF));
 const OBD_REQ_RESP_ADDR_OFFSET_STANDARD: u16 = 8;
 
+#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
 pub struct DiagnosticBroadcastAddress(Id);
 
 impl DiagnosticBroadcastAddress {
@@ -44,6 +45,7 @@ impl Into<Id> for DiagnosticBroadcastAddress {
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
 pub struct DiagnosticRequestAddress(Id);
 
 impl DiagnosticRequestAddress {
@@ -90,6 +92,7 @@ impl fmt::Display for DiagnosticRequestAddress {
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
 pub struct DiagnosticResponseAddress(Id);
 
 impl DiagnosticResponseAddress {

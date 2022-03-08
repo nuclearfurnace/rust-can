@@ -10,3 +10,4 @@ repository = "https://github.com/nuclearfurnace/rust-can"
 
 [dependencies]
 embedded-can = "0.3.0"
+socketcan = "1.7.0"

@@ -78,6 +78,12 @@ impl DiagnosticRequestAddress {
     }
 }
 
+impl Into<Id> for DiagnosticRequestAddress {
+    fn into(self) -> Id {
+        self.0
+    }
+}
+
 impl fmt::Display for DiagnosticRequestAddress {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
@@ -115,6 +121,12 @@ impl DiagnosticResponseAddress {
                 DiagnosticRequestAddress(Id::Extended(response_id))
             }
         }
+    }
+}
+
+impl Into<Id> for DiagnosticResponseAddress {
+    fn into(self) -> Id {
+        self.0
     }
 }
 

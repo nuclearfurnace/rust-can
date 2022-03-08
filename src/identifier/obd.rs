@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::{ExtendedId, Id, StandardId};
+use super::{filter::Filter, ExtendedId, Id, StandardId};
 
 const OBD_BROADCAST_ADDR_STANDARD: Id = Id::Standard(standard_id(0x7DF));
 const OBD_BROADCAST_ADDR_EXTENDED: Id = Id::Extended(extended_id(0x18DB33F1));
@@ -121,6 +121,18 @@ impl DiagnosticResponseAddress {
 impl fmt::Display for DiagnosticResponseAddress {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
+    }
+}
+
+pub struct DiagnosticResponseFilter;
+
+impl DiagnosticResponseFilter {
+    pub const fn standard() -> Filter {
+        Filter::from_identity(OBD_RESP_ADDR_START_STANDARD)
+    }
+
+    pub const fn extended() -> Filter {
+        Filter::from_identity(OBD_RESP_ADDR_START_EXTENDED)
     }
 }
 

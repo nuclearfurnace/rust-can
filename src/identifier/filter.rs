@@ -19,18 +19,18 @@ pub struct Filter {
 }
 
 impl Filter {
-    pub fn new(id: Id, mask: Mask) -> Self {
+    pub const fn new(id: Id, mask: Mask) -> Self {
         Self { id, mask }
     }
 
-    pub fn from_identity(id: Id) -> Self {
+    pub const fn from_identity(id: Id) -> Self {
         Self {
             id,
             mask: Mask(id.as_raw()),
         }
     }
 
-    pub fn matches(&self, id: Id) -> bool {
+    pub const fn matches(&self, id: Id) -> bool {
         id.as_raw() & self.mask.0 == self.id.as_raw() & self.mask.0
     }
 }

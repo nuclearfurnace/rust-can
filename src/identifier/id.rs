@@ -11,12 +11,12 @@ pub struct StandardId(u16);
 impl StandardId {
     /// Minimum value for a standard identifier.
     ///
-    /// This is the highest priority identifier.
+    /// This is the highest priority standard identifier.
     pub const ZERO: Self = Self(0);
 
     /// Maximum value for a standard identifier.
     ///
-    /// This is the lowest priority identifier.
+    /// This is the lowest priority standard identifier.
     pub const MAX: Self = Self(0x7FF);
 
     /// Creates a `StandardId`.
@@ -54,12 +54,12 @@ pub struct ExtendedId(u32);
 impl ExtendedId {
     /// Minimum value for an extended identifier.
     ///
-    /// This is the highest priority identifier.
+    /// This is the highest priority extended identifier.
     pub const ZERO: Self = Self(0);
 
     /// Maximum value for ban extended identifier.
     ///
-    /// This is the lowest priority identifier.
+    /// This is the lowest priority extended identifier.
     pub const MAX: Self = Self(0x1FFF_FFFF);
 
     /// Creates an `ExtendedId`.
@@ -102,6 +102,13 @@ impl fmt::Display for ExtendedId {
 /// attempting to transmit simultaneously and one must be chosen to decide who is allowed to send,
 /// and who must wait to retry their message.  Identifiers that are lower in value have higher
 /// priority on the bus, and vise versa.
+///
+/// ## Priority and sorting
+///
+/// In following with the CAN specification, a `StandardId` is always a higher priority than an
+/// `ExtendedId` as the "Identifier Extension (IDE)" bit will be recessive (1) in the case of an
+/// extended identifier, and so the sorting behavior for `StandardId`, `ExtendedId`, and `Id` all
+/// reflect this.
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
 pub enum Id {
     /// Standard (11-bit) CAN identifier.

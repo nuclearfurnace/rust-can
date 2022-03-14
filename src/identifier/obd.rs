@@ -264,3 +264,16 @@ const fn extended_id(id: u32) -> ExtendedId {
 const fn swap_eid_target_source(eid_raw: u32) -> u32 {
     eid_raw & 0xFFFF0000 | (eid_raw & 0x0000FF00) >> 8 | (eid_raw & 0x000000FF) << 8
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::identifier::obd::swap_eid_target_source;
+
+    #[test]
+    fn test_swap_eid_target_source() {
+        let input = 0x18DAF142;
+        let expected = 0x18DA42F1;
+
+        assert_eq!(expected, swap_eid_target_source(input));
+    }
+}

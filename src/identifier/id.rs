@@ -2,22 +2,33 @@
 
 use std::{cmp, fmt};
 
+use crate::constants::IdentifierFlags;
+
 /// Standard (11-bit) CAN identifier.
 ///
 /// Commonly referred to as CAN 2.0A, a standard identifier falls within the range of 0 to 0x7FF, inclusive.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
-pub struct StandardId(u16);
+pub struct StandardId {
+    identifier: u16,
+    flags: IdentifierFlags,
+}
 
 impl StandardId {
     /// Minimum value for a standard identifier.
     ///
     /// This is the highest priority standard identifier.
-    pub const ZERO: Self = Self(0);
+    pub const ZERO: Self = Self {
+        identifier: 0,
+        flags: IdentifierFlags::empty(),
+    };
 
     /// Maximum value for a standard identifier.
     ///
     /// This is the lowest priority standard identifier.
-    pub const MAX: Self = Self(0x7FF);
+    pub const MAX: Self = Self {
+        identifier: 0x7FF,
+        flags: IdentifierFlags::empty(),
+    };
 
     /// Creates a `StandardId`.
     ///
@@ -25,7 +36,25 @@ impl StandardId {
     #[inline]
     pub const fn new(identifier: u16) -> Option<Self> {
         if identifier <= Self::MAX.as_raw() {
-            Some(Self(identifier))
+            Some(Self {
+                identifier,
+                flags: IdentifierFlags::empty(),
+            })
+        } else {
+            None
+        }
+    }
+
+    /// Creates a `StandardId` with additional flags.
+    ///
+    /// Returns `None` if `identifier` is greater than [`MAX`][Self::MAX].
+    #[inline]
+    pub const fn with_flags(identifier: u16, flags: IdentifierFlags) -> Option<Self> {
+        if identifier <= Self::MAX.as_raw() {
+            Some(Self {
+                identifier,
+                flags: flags.difference(IdentifierFlags::EXTENDED),
+            })
         } else {
             None
         }
@@ -34,13 +63,54 @@ impl StandardId {
     /// Returns the identifier as a raw integer.
     #[inline]
     pub const fn as_raw(&self) -> u16 {
-        self.0
+        self.identifier
+    }
+
+    /// Returns the flags set for this identifier.
+    #[inline]
+    pub const fn flags(&self) -> IdentifierFlags {
+        self.flags
+    }
+
+    /// Sets the flags to the given value.
+    #[inline]
+    pub const fn set_flags(self, flags: IdentifierFlags) -> Self {
+        Self {
+            identifier: self.identifier,
+            flags,
+        }
+    }
+
+    /// Creates a new `StandardId` after mapping its flags to a new value.
+    #[inline]
+    pub fn map_flags<F>(self, f: F) -> Self
+    where
+        F: FnOnce(IdentifierFlags) -> IdentifierFlags,
+    {
+        Self {
+            identifier: self.identifier,
+            flags: f(self.flags),
+        }
+    }
+
+    /// Returns an extended version of this identifier.
+    #[inline]
+    pub const fn as_extended_id(&self) -> ExtendedId {
+        ExtendedId {
+            identifier: self.identifier as u32,
+            flags: self.flags.union(IdentifierFlags::EXTENDED),
+        }
     }
 }
 
 impl fmt::Display for StandardId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:#X}", self.0)
+        let flags = if self.flags.is_empty() {
+            String::new()
+        } else {
+            format!("({:?})", self.flags)
+        };
+        write!(f, "{:#X}{}", self.identifier, flags)
     }
 }
 
@@ -49,26 +119,53 @@ impl fmt::Display for StandardId {
 /// Commonly referred to as CAN 2.0B, an extended identifier falls within the range of 0 to
 /// 0x1FFFFFFF, inclusive.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
-pub struct ExtendedId(u32);
+pub struct ExtendedId {
+    identifier: u32,
+    flags: IdentifierFlags,
+}
 
 impl ExtendedId {
     /// Minimum value for an extended identifier.
     ///
     /// This is the highest priority extended identifier.
-    pub const ZERO: Self = Self(0);
+    pub const ZERO: Self = Self {
+        identifier: 0,
+        flags: IdentifierFlags::EXTENDED,
+    };
 
     /// Maximum value for ban extended identifier.
     ///
     /// This is the lowest priority extended identifier.
-    pub const MAX: Self = Self(0x1FFF_FFFF);
+    pub const MAX: Self = Self {
+        identifier: 0x1FFF_FFFF,
+        flags: IdentifierFlags::EXTENDED,
+    };
 
     /// Creates an `ExtendedId`.
     ///
     /// Returns `None` if `identifier` is greater than [`MAX`][Self::MAX].
     #[inline]
     pub const fn new(identifier: u32) -> Option<Self> {
+        if identifier <= Self::MAX.identifier {
+            Some(Self {
+                identifier,
+                flags: IdentifierFlags::EXTENDED,
+            })
+        } else {
+            None
+        }
+    }
+
+    /// Creates an `ExtendedId` with additional flags.
+    ///
+    /// Returns `None` if `identifier` is greater than [`MAX`][Self::MAX].
+    #[inline]
+    pub const fn with_flags(identifier: u32, flags: IdentifierFlags) -> Option<Self> {
         if identifier <= Self::MAX.as_raw() {
-            Some(Self(identifier))
+            Some(Self {
+                identifier,
+                flags: flags.union(IdentifierFlags::EXTENDED),
+            })
         } else {
             None
         }
@@ -77,18 +174,53 @@ impl ExtendedId {
     /// Returns the identifier as a raw integer.
     #[inline]
     pub const fn as_raw(&self) -> u32 {
-        self.0
+        self.identifier
+    }
+
+    /// Returns the flags set for this identifier.
+    #[inline]
+    pub const fn flags(&self) -> IdentifierFlags {
+        self.flags
+    }
+
+    /// Sets the flags to the given value.
+    #[inline]
+    pub const fn set_flags(self, flags: IdentifierFlags) -> Self {
+        Self {
+            identifier: self.identifier,
+            flags,
+        }
+    }
+
+    /// Creates a new `ExtendedId` after mapping its flags to a new value.
+    #[inline]
+    pub fn map_flags<F>(self, f: F) -> Self
+    where
+        F: FnOnce(IdentifierFlags) -> IdentifierFlags,
+    {
+        Self {
+            identifier: self.identifier,
+            flags: f(self.flags),
+        }
     }
 
     /// Returns the base (standard) portion of this extended identifier.
     pub const fn as_standard_id(&self) -> StandardId {
-        StandardId((self.0 >> 18) as u16)
+        StandardId {
+            identifier: (self.identifier >> 18) as u16,
+            flags: self.flags.difference(IdentifierFlags::EXTENDED),
+        }
     }
 }
 
 impl fmt::Display for ExtendedId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:#X}", self.0)
+        let flags = if self.flags.is_empty() {
+            String::new()
+        } else {
+            format!("({:?})", self.flags)
+        };
+        write!(f, "{:#X}{}", self.identifier, flags)
     }
 }
 
@@ -119,10 +251,31 @@ pub enum Id {
 }
 
 impl Id {
+    /// Returns the identifier as a raw integer.
     pub const fn as_raw(&self) -> u32 {
         match self {
             Self::Standard(sid) => sid.as_raw() as u32,
             Self::Extended(eid) => eid.as_raw(),
+        }
+    }
+
+    /// Returns the flags set for this identifier.
+    pub const fn flags(&self) -> IdentifierFlags {
+        match self {
+            Self::Standard(id) => id.flags(),
+            Self::Extended(id) => id.flags(),
+        }
+    }
+
+    /// Creates a new `Id` after mapping its flags to a new value.
+    #[inline]
+    pub fn map_flags<F>(self, f: F) -> Self
+    where
+        F: FnOnce(IdentifierFlags) -> IdentifierFlags,
+    {
+        match self {
+            Self::Standard(id) => Self::Standard(id.map_flags(f)),
+            Self::Extended(id) => Self::Extended(id.map_flags(f)),
         }
     }
 }
@@ -163,13 +316,13 @@ impl From<ExtendedId> for Id {
 
 impl Into<embedded_can::StandardId> for StandardId {
     fn into(self) -> embedded_can::StandardId {
-        unsafe { embedded_can::StandardId::new_unchecked(self.0) }
+        unsafe { embedded_can::StandardId::new_unchecked(self.identifier) }
     }
 }
 
 impl Into<embedded_can::ExtendedId> for ExtendedId {
     fn into(self) -> embedded_can::ExtendedId {
-        unsafe { embedded_can::ExtendedId::new_unchecked(self.0) }
+        unsafe { embedded_can::ExtendedId::new_unchecked(self.identifier) }
     }
 }
 

@@ -19,7 +19,7 @@ use crate::{constants::IdentifierFlags, identifier::Id};
 /// to the operating system, or controller/transmitter peripherals, we focus purely on the logical
 /// use cases, which is why `Frame` could be used for pure CAN, or ISO-TP and other transport
 /// protocols, without necessarily needing to specialize the types involved.
-/// 
+///
 /// [isotp]: https://en.wikipedia.org/wiki/ISO_15765-2
 pub struct Frame {
     id: Id,

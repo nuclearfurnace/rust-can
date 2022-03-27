@@ -1,13 +1,21 @@
+//! Various CAN-specific constants.
+//!
+//! These constants are primarily used by the high-level types in the crate, such as encoding the
+//! frame type in an identifier, or masking specific identifiers in a filter.  However, they're
+//! exposed here in case they are necessary and/or can provide value to users.
+
 use bitflags::bitflags;
 
 bitflags! {
     /// Identifier flags for indicating various frame types.
     ///
-    /// These flags are applied logically in `can`, but flag values themselves correspond to the format used
-    /// by the Linux SocketCAN library.  This lets flags be applied logically to identifiers such
-    /// that callers can construct their calls to the underlying CAN transceivers/controllers in
-    /// whatever way is required, but also provides a happy path for SocketCAN users by allowing
-    /// generation of the all-in-one 32-bit identifier value.
+    /// These flags are applied logically in `can`, but flag values themselves correspond to the
+    /// format used by the Linux [SocketCAN][socketcan] library.  This lets flags be applied
+    /// logically to identifiers such that callers can construct their calls to the underlying CAN
+    /// transceivers/controllers in whatever way is required, but also provides a happy path for
+    /// SocketCAN users by allowing generation of the all-in-one 32-bit identifier value.
+    ///
+    /// [socketcan]: https://www.kernel.org/doc/Documentation/networking/can.txt
     #[repr(transparent)]
     pub struct IdentifierFlags: u32 {
         /// The frame is using the extended format i.e. 29-bit extended identifiers.

@@ -1,5 +1,3 @@
-//! CAN Identifiers.
-
 use std::{cmp, fmt};
 
 use crate::constants::IdentifierFlags;
@@ -314,18 +312,24 @@ impl From<ExtendedId> for Id {
     }
 }
 
+#[cfg(feature = "embedded-can-compat")]
+#[cfg_attr(docsrs, doc(cfg(feature = "embedded-can-compat")))]
 impl Into<embedded_can::StandardId> for StandardId {
     fn into(self) -> embedded_can::StandardId {
         unsafe { embedded_can::StandardId::new_unchecked(self.identifier) }
     }
 }
 
+#[cfg(feature = "embedded-can-compat")]
+#[cfg_attr(docsrs, doc(cfg(feature = "embedded-can-compat")))]
 impl Into<embedded_can::ExtendedId> for ExtendedId {
     fn into(self) -> embedded_can::ExtendedId {
         unsafe { embedded_can::ExtendedId::new_unchecked(self.identifier) }
     }
 }
 
+#[cfg(feature = "embedded-can-compat")]
+#[cfg_attr(docsrs, doc(cfg(feature = "embedded-can-compat")))]
 impl Into<embedded_can::Id> for Id {
     fn into(self) -> embedded_can::Id {
         match self {

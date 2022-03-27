@@ -150,10 +150,10 @@ impl fmt::Display for DiagnosticRequestAddress {
 ///
 /// Based on the identifier lengths, up to eight (8) devices can be addressed using standard
 /// addressing (11-bit identifier) while up to 256 devices can be addressed using extended
-/// addressing (29-bit identifier).  However, the number of legislated OBD devices is not allowed to
-/// exceed eight (8) devices, regardless of addressing scheme.  Additionally, it is recommended, but
+/// addressing (29-bit identifier). However, the number of legislated OBD devices is not allowed to
+/// exceed eight (8) devices, regardless of addressing scheme. Additionally, it is recommended, but
 /// not required, that these devices use the lowest possible numbering within their respective
-/// identifier ranges.  Thus, while standard addressing only supports eight (8) addresses and thus
+/// identifier ranges. Thus, while standard addressing only supports eight (8) addresses and thus
 /// implicitly constrains the expected identifiers, systems using extended addressing may have up to
 /// eight (8) devices assigned anywhere within the the range of the 256 possible identifiers.
 ///

@@ -20,8 +20,6 @@ impl Mask {
 
 /// An identifier filter.
 ///
-/// ## Purpose
-///
 /// Often times when communicating on a bus with many devices, it can be useful to filter which
 /// messages are captured and which are ignored.  This can dramatically speed up processing times
 /// and reduce the overhead of having to receive and then discard every single message transmitted
@@ -189,6 +187,8 @@ impl Filter {
     }
 }
 
+#[cfg(feature = "socketcan-compat")]
+#[cfg_attr(docsrs, doc(cfg(feature = "socketcan-compat")))]
 impl Into<socketcan::CANFilter> for Filter {
     fn into(self) -> socketcan::CANFilter {
         socketcan::CANFilter::new(self.id.as_raw() & self.id.flags().bits(), self.mask.0).unwrap()

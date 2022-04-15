@@ -81,10 +81,10 @@ impl Frame {
     /// # Errors
     ///
     /// If the size of the data in the current frame is too large to fit in an ISO-TP "Single
-    /// Frame", then `Err(())` is returned.
-    pub fn as_isotp_frame(&self) -> Result<Self, ()> {
+    /// Frame", then `None` is returned.
+    pub fn as_isotp_frame(&self) -> Option<Self> {
         if self.data.len() > 7 {
-            return Err(());
+            return None;
         }
 
         let data_len = u8::try_from(self.data.len()).expect("self.data.len() must be less than 8");
@@ -92,7 +92,7 @@ impl Frame {
         new_data.put_u8(data_len);
         new_data.extend_from_slice(&self.data);
 
-        Ok(Self {
+        Some(Self {
             id: self.id,
             data: new_data.freeze(),
         })

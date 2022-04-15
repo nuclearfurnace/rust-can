@@ -19,6 +19,9 @@ bytes = "1.0.0"
 embedded-can = { version = "0.3.0", default-features = false, optional = true }
 socketcan = { version = "1.7.0", default-features = false, optional = true }
 
+[dev-dependencies]
+proptest = "1"
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

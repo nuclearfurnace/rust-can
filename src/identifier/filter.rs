@@ -1,8 +1,11 @@
+use std::ops::{Add, BitAnd, BitOr, BitXor, Sub};
+
 use crate::constants::{IdentifierFlags, EFF_MASK};
 
-use super::{Id, StandardId};
+use super::{ExtendedId, Id, StandardId};
 
 /// Mask component of a filter.
+#[derive(Debug)]
 pub struct Mask(u32);
 
 impl Mask {
@@ -15,6 +18,46 @@ impl Mask {
     /// Creates a new [`Mask`].
     pub const fn new(mask: u32) -> Mask {
         Self(mask)
+    }
+}
+
+impl BitAnd for Mask {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Mask(self.0 & rhs.0)
+    }
+}
+
+impl BitOr for Mask {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Mask(self.0 | rhs.0)
+    }
+}
+
+impl BitXor for Mask {
+    type Output = Self;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Mask(self.0 ^ rhs.0)
+    }
+}
+
+impl Add for Mask {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Mask(self.0.wrapping_add(rhs.0))
+    }
+}
+
+impl Sub for Mask {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Mask(self.0.wrapping_sub(rhs.0))
     }
 }
 
@@ -84,6 +127,7 @@ impl Mask {
 /// identifier, match error frames only, etc.
 ///
 /// [socketcan]: https://www.kernel.org/doc/Documentation/networking/can.txt
+#[derive(Debug)]
 pub struct Filter {
     id: Id,
     mask: Mask,
@@ -104,6 +148,32 @@ impl Filter {
         Self {
             id,
             mask: Mask(EFF_MASK | id.flags().bits()),
+        }
+    }
+
+    /// Creates a [`Filter`] that will match any identifier between `start` and `end`, inclusive.
+    pub fn range(start: Id, end: Id) -> Self {
+        let (id, delta_mask) = if start > end {
+            (end, start.as_raw() - end.as_raw())
+        } else {
+            (start, end.as_raw() - start.as_raw())
+        };
+
+        Self {
+            id,
+            mask: Mask::ALL - Mask(delta_mask),
+        }
+    }
+
+    /// Creates a [`Filter`] that matches no identifiers.
+    pub const fn none() -> Self {
+        // Abuse the fact that, in practice, a CAN frame can/should never be a data frame, error
+        // frame, and remote frame simultaneously. Callers could _technically_ construct an
+        // identifier and do what we're doing here, but I'm comfortable saying: you brought this on
+        // yourself. :P
+        Self {
+            id: Id::Extended(ExtendedId::MAX).set_flags(IdentifierFlags::all()),
+            mask: Mask::ALL,
         }
     }
 
@@ -181,8 +251,9 @@ impl Filter {
 
     /// Checks if the given identifier matches the filter.
     pub const fn matches(&self, id: Id) -> bool {
-        let self_id = self.id.as_raw() & self.id.flags().bits();
-        let other_id = id.as_raw() & id.flags().bits();
+        let self_id = self.id.as_raw() | self.id.flags().bits();
+        let other_id = id.as_raw() | id.flags().bits();
+
         other_id & self.mask.0 == self_id & self.mask.0
     }
 }
@@ -192,5 +263,89 @@ impl Filter {
 impl Into<socketcan::CANFilter> for Filter {
     fn into(self) -> socketcan::CANFilter {
         socketcan::CANFilter::new(self.id.as_raw() & self.id.flags().bits(), self.mask.0).unwrap()
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use crate::identifier::{id::tests::arb_id, StandardId};
+
+    use super::Filter;
+
+    use proptest::{collection::vec as arb_vec, proptest};
+
+    proptest! {
+        #[test]
+        fn none(ids in arb_vec(arb_id(), 100..1000)) {
+            let filter = Filter::none();
+            for id in ids {
+                assert!(!filter.matches(id));
+            }
+        }
+
+        #[test]
+        fn any(ids in arb_vec(arb_id(), 100..1000)) {
+            let filter = Filter::any();
+            for id in ids {
+                assert!(filter.matches(id));
+            }
+        }
+    }
+
+    #[test]
+    fn range() {
+        let start = StandardId::new(0x7E0).unwrap();
+        let end = StandardId::new(0x7EF).unwrap();
+
+        run_range(start, end);
+    }
+
+    #[test]
+    fn range_reversed() {
+        let start = StandardId::new(0x7E0).unwrap();
+        let end = StandardId::new(0x7EF).unwrap();
+
+        run_range(end, start);
+    }
+
+    fn run_range(start: StandardId, end: StandardId) {
+        // Figure out the ranges of identifiers to test that should be outside of the range, as well
+        // as inside the range.  We have to make sure we figure out if start/end are in the right
+        // order since being able to handle out-of-order start/end arguments is part of
+        // `Filter::range` so that we can avoid having to make it fallible when the "fix" is just
+        // internally flipping the operands ourselves.
+        let zero = StandardId::ZERO.as_raw();
+        let max = StandardId::MAX.as_raw();
+        let (filter_raw_start, filter_raw_end) = if start > end {
+            // Start/end are out-of-order, so our "before" range needs to be ZERO <-> end and the
+            // "after" range needs to be start <-> MAX.
+            (end.as_raw(), start.as_raw())
+        } else {
+            // Things are already in the right order.
+            (start.as_raw(), end.as_raw())
+        };
+
+        let before_range = zero..filter_raw_start;
+        let after_range = (filter_raw_end + 1)..max;
+        let match_range = filter_raw_start..=filter_raw_end;
+
+        let filter = Filter::range(start.into(), end.into());
+
+        // Make sure the identifiers outside of the range do not match.
+        for i in before_range {
+            let id = StandardId::new(i).unwrap();
+            assert!(!filter.matches(id.into()));
+        }
+
+        for i in after_range {
+            let id = StandardId::new(i).unwrap();
+            assert!(!filter.matches(id.into()));
+        }
+
+        // And make sure the filter actually does match identifiers within the range, inclusive.
+        for i in match_range {
+            let id = StandardId::new(i).unwrap();
+            assert!(filter.matches(id.into()));
+        }
     }
 }

@@ -70,7 +70,7 @@ impl StandardId {
         self.flags
     }
 
-    /// Sets the flags to the given value.
+    /// Creates a new `StandardId` after setting its flags to a new value.
     #[inline]
     pub const fn set_flags(self, flags: IdentifierFlags) -> Self {
         Self {
@@ -181,12 +181,12 @@ impl ExtendedId {
         self.flags
     }
 
-    /// Sets the flags to the given value.
+    /// Creates a new `ExtendedId` after setting its flags to a new value.
     #[inline]
     pub const fn set_flags(self, flags: IdentifierFlags) -> Self {
         Self {
             identifier: self.identifier,
-            flags,
+            flags: flags.union(IdentifierFlags::EXTENDED),
         }
     }
 
@@ -198,7 +198,7 @@ impl ExtendedId {
     {
         Self {
             identifier: self.identifier,
-            flags: f(self.flags),
+            flags: f(self.flags).union(IdentifierFlags::EXTENDED),
         }
     }
 
@@ -262,6 +262,15 @@ impl Id {
         match self {
             Self::Standard(id) => id.flags(),
             Self::Extended(id) => id.flags(),
+        }
+    }
+
+    /// Creates a new `Id` after setting its flags to a new value.
+    #[inline]
+    pub const fn set_flags(self, flags: IdentifierFlags) -> Self {
+        match self {
+            Self::Standard(id) => Self::Standard(id.set_flags(flags)),
+            Self::Extended(id) => Self::Extended(id.set_flags(flags)),
         }
     }
 
@@ -336,5 +345,39 @@ impl Into<embedded_can::Id> for Id {
             Self::Standard(sid) => embedded_can::Id::Standard(sid.into()),
             Self::Extended(eid) => embedded_can::Id::Extended(eid.into()),
         }
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use crate::constants::tests::arb_identifier_flags;
+
+    use super::{ExtendedId, Id, StandardId};
+    use proptest::{prop_oneof, strategy::Strategy};
+
+    const STANDARD_ID_MIN: u16 = StandardId::ZERO.as_raw();
+    const STANDARD_ID_MAX: u16 = StandardId::MAX.as_raw();
+    const EXTENDED_ID_MIN: u32 = ExtendedId::ZERO.as_raw();
+    const EXTENDED_ID_MAX: u32 = ExtendedId::MAX.as_raw();
+
+    pub fn arb_standardid() -> impl Strategy<Value = StandardId> {
+        ((STANDARD_ID_MIN..=STANDARD_ID_MAX), arb_identifier_flags()).prop_map(|(id, flags)| {
+            StandardId::with_flags(id, flags)
+                .expect("arbitrary impl should never generate invalid standard IDs")
+        })
+    }
+
+    pub fn arb_extendedid() -> impl Strategy<Value = ExtendedId> {
+        ((EXTENDED_ID_MIN..=EXTENDED_ID_MAX), arb_identifier_flags()).prop_map(|(id, flags)| {
+            ExtendedId::with_flags(id, flags)
+                .expect("arbitrary impl should never generate invalid extended IDs")
+        })
+    }
+
+    pub fn arb_id() -> impl Strategy<Value = Id> {
+        prop_oneof![
+            arb_standardid().prop_map(Id::from).boxed(),
+            arb_extendedid().prop_map(Id::from).boxed(),
+        ]
     }
 }

@@ -1,6 +1,6 @@
 use std::ops::{Add, BitAnd, BitOr, BitXor, Sub};
 
-use crate::constants::{IdentifierFlags, EFF_MASK};
+use crate::constants::IdentifierFlags;
 
 use super::{ExtendedId, Id, StandardId};
 
@@ -147,7 +147,7 @@ impl Filter {
     pub const fn from_identity(id: Id) -> Self {
         Self {
             id,
-            mask: Mask(EFF_MASK | id.flags().bits()),
+            mask: Mask::ALL,
         }
     }
 
@@ -262,7 +262,7 @@ impl Filter {
 #[cfg_attr(docsrs, doc(cfg(feature = "socketcan-compat")))]
 impl Into<socketcan::CANFilter> for Filter {
     fn into(self) -> socketcan::CANFilter {
-        socketcan::CANFilter::new(self.id.as_raw() & self.id.flags().bits(), self.mask.0).unwrap()
+        socketcan::CANFilter::new(self.id.as_raw() | self.id.flags().bits(), self.mask.0).unwrap()
     }
 }
 

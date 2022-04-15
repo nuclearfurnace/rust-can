@@ -1,6 +1,6 @@
 //! CAN frame.
 
-use bytes::Bytes;
+use bytes::{BufMut, Bytes, BytesMut};
 
 use crate::{constants::IdentifierFlags, identifier::Id};
 
@@ -71,5 +71,30 @@ impl Frame {
     /// Whether or not this is an error frame.
     pub const fn is_error_frame(&self) -> bool {
         self.id.flags().contains(IdentifierFlags::ERROR)
+    }
+
+    /// Creates a new `Frame` that is compliant as an ISO-TP "Single Frame".
+    ///
+    /// The existing identifier and data are copied over to the new frame, and the length of the
+    /// existing data is prepended to the data as a single byte.
+    ///
+    /// # Errors
+    ///
+    /// If the size of the data in the current frame is too large to fit in an ISO-TP "Single
+    /// Frame", then `Err(())` is returned.
+    pub fn as_isotp_frame(&self) -> Result<Self, ()> {
+        if self.data.len() > 7 {
+            return Err(());
+        }
+
+        let data_len = u8::try_from(self.data.len()).expect("self.data.len() must be less than 8");
+        let mut new_data = BytesMut::with_capacity(1 + self.data.len());
+        new_data.put_u8(data_len);
+        new_data.extend_from_slice(&self.data);
+
+        Ok(Self {
+            id: self.id,
+            data: new_data.freeze(),
+        })
     }
 }

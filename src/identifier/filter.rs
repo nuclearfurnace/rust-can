@@ -152,8 +152,8 @@ impl Filter {
     }
 
     /// Creates a [`Filter`] that will match any identifier between `start` and `end`, inclusive.
-    pub fn range(start: Id, end: Id) -> Self {
-        let (id, delta_mask) = if start > end {
+    pub const fn range(start: Id, end: Id) -> Self {
+        let (id, delta_mask) = if start.as_raw() > end.as_raw() {
             (end, start.as_raw() - end.as_raw())
         } else {
             (start, end.as_raw() - start.as_raw())
@@ -161,7 +161,7 @@ impl Filter {
 
         Self {
             id,
-            mask: Mask::ALL - Mask(delta_mask),
+            mask: Mask(Mask::ALL.0 - delta_mask),
         }
     }
 

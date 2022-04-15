@@ -233,7 +233,7 @@ impl DiagnosticResponseFilter {
     /// Matches identifiers 0x7E8 to 0x7EF, as outlined by ISO 15765-4:2005(E), section
     /// 6.3.2.2, table 3, "11 bit legislated-OBD CAN identifiers".
     pub const fn standard() -> Filter {
-        Filter::from_identity(OBD_RESP_ADDR_START_STANDARD)
+        Filter::range(OBD_RESP_ADDR_START_STANDARD, OBD_RESP_ADDR_END_STANDARD)
     }
 
     /// Gets the filter for physical response identifiers when using extended addressing.
@@ -243,7 +243,7 @@ impl DiagnosticResponseFilter {
     /// Matches identifiers 0x18DAF100 to 0x18DAF1FF, as outlined by ISO 15765-4:2005(E),
     /// section 6.3.2.3, table 5, "29 bit legislated-OBD CAN identifiers".
     pub const fn extended() -> Filter {
-        Filter::from_identity(OBD_RESP_ADDR_START_EXTENDED)
+        Filter::range(OBD_RESP_ADDR_START_EXTENDED, OBD_RESP_ADDR_END_EXTENDED)
     }
 }
 
